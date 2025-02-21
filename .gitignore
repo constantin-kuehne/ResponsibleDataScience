@@ -1,1 +1,10 @@
-./data/*
+**/data/*
+*.log
+*.pyc
+
+*outputs*
+*wandb*
+venv
+
+checkpoints/
+*/__pycache__/*
