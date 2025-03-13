@@ -1,0 +1,9 @@
+- [x] Scaling/ Normalization
+- [x] Outliers (Robuste Scaling)
+- [ ] PCA?
+- [x] Dropping Highly Correlated
+- [x] Missing values for Categorical
+- [ ] Underrepresentation
+    - [ ] Representation Learning
+    - [ ] Relabeling
+    - Check if "age", "ethnicity" and "gender" increase accuracy if not remove them

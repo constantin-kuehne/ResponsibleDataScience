@@ -3,11 +3,11 @@ import pandas as pd
 
 # %%
 description = pd.read_csv(
-    "./physionet.org/files/widsdatathon2020/1.0.0/data/WiDS_Datathon_2020_Dictionary.csv"
+    "../physionet.org/files/widsdatathon2020/1.0.0/data/WiDS_Datathon_2020_Dictionary.csv"
 )
 description_dict = description.set_index("Variable Name").to_dict(orient="index")
 
-df = pd.read_csv("./physionet.org/files/widsdatathon2020/1.0.0/data/training_v2.csv")
+df = pd.read_csv("../physionet.org/files/widsdatathon2020/1.0.0/data/training_v2.csv")
 
 df.head()
 
@@ -175,9 +175,6 @@ df["gcs_motor_apache"].corr(df["hospital_death"], method="kendall") # type: igno
 
 
 # %%
-
-
-# %%
 categorical_columns = df.select_dtypes(include=["object"]).columns
 unique_values = {col: df[col].nunique() for col in categorical_columns}
 print("Unique values in categorical columns:", unique_values)
@@ -192,3 +189,103 @@ for col in numerical_columns[:5]:
 # %%
 data_types = df.dtypes
 print("Data types of each column:", data_types)
+
+# %%
+df_dropped_cols = df.drop(columns=[col for col in df.columns if "apache" in col])
+
+# %%
+correlation_matrix = df_dropped_cols.apply(
+    lambda x: pd.factorize(x)[0] if x.dtype == "object" else x
+).corr(method="pearson")
+plt.figure(figsize=(26, 20))
+sns.heatmap(
+    correlation_matrix, annot=False, cmap="coolwarm", xticklabels=True, yticklabels=True
+)
+plt.xticks(fontsize=5)
+plt.yticks(fontsize=5)
+plt.title("Correlation Matrix", fontsize=16)
+plt.savefig("correlation_matrix.pdf", dpi=600, format="pdf", bbox_inches="tight")
+plt.show()
+
+# %%
+df["gender"].value_counts()
+
+# %%
+df[df["gender"] == "M"]["hospital_death"].value_counts()
+
+# %%
+df[df["gender"] == "F"]["hospital_death"].value_counts()
+
+# %%
+df["ethnicity"].value_counts()
+
+# %%
+df[df["ethnicity"] == "Caucasian"]["hospital_death"].value_counts()
+
+# %%
+df[df["ethnicity"] == "Native American"]["hospital_death"].value_counts()
+
+# %%
+df[df["ethnicity"] == "African American"]["hospital_death"].value_counts()
+
+# Calculate the total number of deaths and total records for each gender
+gender_death_counts = df[df["hospital_death"] == 1]["gender"].value_counts()
+gender_total_counts = df["gender"].value_counts()
+
+# Calculate the percentage of deaths per gender
+gender_death_percentage = (gender_death_counts / gender_total_counts) * 100
+
+# Plot the bar chart
+plt.figure(figsize=(8, 5))
+gender_death_percentage.plot(kind='bar', color='lightcoral')
+plt.title("Percentage of Deaths per Gender")
+plt.xlabel("Gender")
+plt.ylabel("Percentage of Deaths")
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.show()
+
+# %%
+# Calculate the total number of deaths and total records for each ethnicity
+ethnicity_death_counts = df[df["hospital_death"] == 1]["ethnicity"].value_counts()
+ethnicity_total_counts = df["ethnicity"].value_counts()
+
+# Calculate the percentage of deaths per ethnicity
+ethnicity_death_percentage = (ethnicity_death_counts / ethnicity_total_counts) * 100
+
+# Plot the bar chart
+plt.figure(figsize=(10, 6))
+ethnicity_death_percentage.plot(kind='bar', color='skyblue')
+plt.title("Percentage of Deaths per Ethnicity")
+plt.xlabel("Ethnicity")
+plt.ylabel("Percentage of Deaths")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+plt.show()
+
+
+# %%
+df["age"].describe()
+
+# Calculate the total number of deaths and total records for each age
+age_death_counts = df[df["hospital_death"] == 1]["age"].value_counts().sort_index()
+age_total_counts = df["age"].value_counts().sort_index()
+
+# Calculate the percentage of deaths per age
+age_death_percentage = (age_death_counts / age_total_counts) * 100
+
+# Plot the line chart
+plt.figure(figsize=(12, 6))
+age_death_percentage.plot(kind='line', marker='o', color='green')
+plt.title("Percentage of Deaths per Age")
+plt.xlabel("Age")
+plt.ylabel("Percentage of Deaths")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# %%
+list(df.columns)
+
+# %%
+df["hospital_admit_source"].value_counts()
