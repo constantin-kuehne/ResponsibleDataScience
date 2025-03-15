@@ -8,3 +8,5 @@ venv
 
 checkpoints/
 */__pycache__/*
+training_v2.csv
+WiDS_Datathon_2020_Dictionary.csv
