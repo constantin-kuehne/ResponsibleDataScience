@@ -3,11 +3,11 @@ import pandas as pd
 
 # %%
 description = pd.read_csv(
-    "../physionet.org/files/widsdatathon2020/1.0.0/data/WiDS_Datathon_2020_Dictionary.csv"
+    "./physionet.org/files/widsdatathon2020/1.0.0/data/WiDS_Datathon_2020_Dictionary.csv"
 )
 description_dict = description.set_index("Variable Name").to_dict(orient="index")
 
-df = pd.read_csv("../physionet.org/files/widsdatathon2020/1.0.0/data/training_v2.csv")
+df = pd.read_csv("./physionet.org/files/widsdatathon2020/1.0.0/data/training_v2.csv")
 
 df.head()
 
@@ -236,14 +236,12 @@ gender_total_counts = df["gender"].value_counts()
 gender_death_percentage = (gender_death_counts / gender_total_counts) * 100
 
 # Plot the bar chart
-plt.figure(figsize=(8, 5))
-gender_death_percentage.plot(kind='bar', color='lightcoral')
-plt.title("Percentage of Deaths per Gender")
-plt.xlabel("Gender")
-plt.ylabel("Percentage of Deaths")
-plt.xticks(rotation=0)
-plt.tight_layout()
-plt.show()
+fig, ax= plt.subplots(figsize=(8, 5))
+gender_death_percentage.plot(kind='bar', color='lightcoral', ax=ax)
+ax.set_title("Percentage of Deaths per Gender")
+ax.set_xlabel("Gender")
+ax.set_ylabel("Percentage of Deaths")
+fig.savefig("gender_precentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight")
 
 # %%
 # Calculate the total number of deaths and total records for each ethnicity
@@ -254,14 +252,12 @@ ethnicity_total_counts = df["ethnicity"].value_counts()
 ethnicity_death_percentage = (ethnicity_death_counts / ethnicity_total_counts) * 100
 
 # Plot the bar chart
-plt.figure(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(10, 6))
 ethnicity_death_percentage.plot(kind='bar', color='skyblue')
-plt.title("Percentage of Deaths per Ethnicity")
-plt.xlabel("Ethnicity")
-plt.ylabel("Percentage of Deaths")
-plt.xticks(rotation=45, ha="right")
-plt.tight_layout()
-plt.show()
+ax.set_title("Percentage of Deaths per Ethnicity")
+ax.set_xlabel("Ethnicity")
+ax.set_ylabel("Percentage of Deaths")
+fig.savefig("ethnicity_precentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight")
 
 
 # %%
