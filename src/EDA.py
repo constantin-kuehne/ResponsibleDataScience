@@ -2,12 +2,10 @@
 import pandas as pd
 
 # %%
-description = pd.read_csv(
-    "./physionet.org/files/widsdatathon2020/1.0.0/data/WiDS_Datathon_2020_Dictionary.csv"
-)
+description = pd.read_csv("./WiDS_Datathon_2020_Dictionary.csv")
 description_dict = description.set_index("Variable Name").to_dict(orient="index")
 
-df = pd.read_csv("./physionet.org/files/widsdatathon2020/1.0.0/data/training_v2.csv")
+df = pd.read_csv("./training_v2.csv")
 
 df.head()
 
@@ -70,6 +68,71 @@ plt.savefig("correlation_matrix.png", dpi=600)
 plt.show()
 
 # %%
+import numpy as np
+
+correlation_matrix = df.apply(
+    lambda x: pd.factorize(x)[0] if x.dtype == "object" else x
+).corr(method="pearson")
+
+# Set a correlation threshold to identify highly correlated feature pairs
+threshold = 0.8  # Adjust based on your needs
+
+# Create a mask for the upper triangle of the correlation matrix (to avoid duplicates)
+mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+
+# Find pairs of features with correlation above threshold
+high_corr_pairs = []
+for i in range(len(correlation_matrix.columns)):
+    for j in range(i + 1, len(correlation_matrix.columns)):
+        if abs(correlation_matrix.iloc[i, j]) >= threshold:
+            high_corr_pairs.append(
+                (
+                    correlation_matrix.columns[i],
+                    correlation_matrix.columns[j],
+                    correlation_matrix.iloc[i, j],
+                )
+            )
+
+# Sort by absolute correlation value (descending)
+high_corr_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
+
+# Get unique features that appear in these high correlation pairs
+high_corr_features = set()
+for feat1, feat2, _ in high_corr_pairs:
+    high_corr_features.add(feat1)
+    high_corr_features.add(feat2)
+
+# Convert to list and sort for consistency
+high_corr_features = sorted(list(high_corr_features))
+
+# Create a smaller correlation matrix with just these features
+smaller_corr_matrix = correlation_matrix.loc[high_corr_features, high_corr_features]
+
+# Plot the smaller correlation matrix
+plt.figure(figsize=(18, 16))
+sns.heatmap(
+    smaller_corr_matrix,
+    annot=False,  # Set to True if the matrix is small enough
+    cmap="coolwarm",
+    xticklabels=True,
+    yticklabels=True,
+    vmin=-1,
+    vmax=1,
+)
+plt.xticks(fontsize=8, rotation=90)
+plt.yticks(fontsize=8)
+plt.title(
+    f"Correlation Matrix of Highly Correlated Features (|r| ≥ {threshold})", fontsize=16
+)
+plt.savefig("high_correlation_matrix.pdf", dpi=300, format="pdf", bbox_inches="tight")
+plt.show()
+
+# Optionally, print out the highly correlated pairs for reference
+print(f"Top {min(20, len(high_corr_pairs))} highly correlated feature pairs:")
+for i, (feat1, feat2, corr) in enumerate(high_corr_pairs[:20], 1):
+    print(f"{i}. {feat1} — {feat2}: {corr:.3f}")
+
+# %%
 hospital_death_correlation = (
     df.apply(lambda x: pd.factorize(x)[0] if x.dtype == "object" else x)
     .corrwith(df["hospital_death"])
@@ -121,22 +184,22 @@ High missing values with nearly 75% of the values missing
 """
 
 # %%
-df["d1_lactate_min"].fillna(0).corr(df["hospital_death"]) # type: ignore
+df["d1_lactate_min"].fillna(0).corr(df["hospital_death"])  # type: ignore
 """
 This lowers correlation to ~32% from ~40%. This means that the missing values can not be described as just a zero value.
 """
 
-df["d1_lactate_min"].fillna(df["d1_lactate_min"].mean()).corr(df["hospital_death"]) # type: ignore
+df["d1_lactate_min"].fillna(df["d1_lactate_min"].mean()).corr(df["hospital_death"])  # type: ignore
 """
 Even worse.
 """
 
-df["d1_lactate_min"].fillna(df["d1_lactate_min"].min()).corr(df["hospital_death"]) # type: ignore
+df["d1_lactate_min"].fillna(df["d1_lactate_min"].min()).corr(df["hospital_death"])  # type: ignore
 """
 Around the same as 0 as the min is 0.4 anyway
 """
 
-df["d1_lactate_min"].fillna(df["d1_lactate_min"].max()).corr(df["hospital_death"]) # type: ignore
+df["d1_lactate_min"].fillna(df["d1_lactate_min"].max()).corr(df["hospital_death"])  # type: ignore
 """
 Really bad. Changes the whole correlation to negative
 """
@@ -148,7 +211,7 @@ df["h1_lactate_min"].isnull().sum() / df.shape[0] * 100
 Even higher missing values with over 90% of the values missing
 """
 
-df["h1_lactate_min"].fillna(0).corr(df["hospital_death"]) # type: ignore
+df["h1_lactate_min"].fillna(0).corr(df["hospital_death"])  # type: ignore
 """
 This lowers correlation to ~16% from ~32%. This means that the missing values can not be described as just a zero value.
 """
@@ -170,8 +233,8 @@ Most of the rows has a value of 6
 """
 
 # %%
-df["gcs_motor_apache"].corr(df["hospital_death"], method="spearman") # type: ignore
-df["gcs_motor_apache"].corr(df["hospital_death"], method="kendall") # type: ignore
+df["gcs_motor_apache"].corr(df["hospital_death"], method="spearman")  # type: ignore
+df["gcs_motor_apache"].corr(df["hospital_death"], method="kendall")  # type: ignore
 
 
 # %%
@@ -236,8 +299,8 @@ gender_total_counts = df["gender"].value_counts()
 gender_death_percentage = (gender_death_counts / gender_total_counts) * 100
 
 # Plot the bar chart
-fig, ax= plt.subplots(figsize=(8, 5))
-gender_death_percentage.plot(kind='bar', color='lightcoral', ax=ax)
+fig, ax = plt.subplots(figsize=(8, 5))
+gender_death_percentage.plot(kind="bar", color="lightcoral", ax=ax)
 ax.set_title("Percentage of Deaths per Gender")
 ax.set_xlabel("Gender")
 ax.set_ylabel("Percentage of Deaths")
@@ -253,12 +316,84 @@ ethnicity_death_percentage = (ethnicity_death_counts / ethnicity_total_counts) *
 
 # Plot the bar chart
 fig, ax = plt.subplots(figsize=(10, 6))
-ethnicity_death_percentage.plot(kind='bar', color='skyblue')
+ethnicity_death_percentage.plot(kind="bar", color="skyblue")
 ax.set_title("Percentage of Deaths per Ethnicity")
 ax.set_xlabel("Ethnicity")
 ax.set_ylabel("Percentage of Deaths")
-fig.savefig("ethnicity_precentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight")
+fig.savefig(
+    "ethnicity_precentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight"
+)
 
+# %%
+# Calculate the total number of deaths and total records for each ethnicity
+ethnicity_death_counts = df[df["hospital_death"] == 1]["ethnicity"].value_counts()
+ethnicity_total_counts = df["ethnicity"].value_counts()
+
+# Calculate the percentage of deaths per ethnicity
+ethnicity_death_percentage = (ethnicity_death_counts / ethnicity_total_counts) * 100
+
+# Sort the data in descending order for better visualization
+ethnicity_death_percentage = ethnicity_death_percentage.sort_values(ascending=False)
+
+# Set a clean, modern style
+# plt.style.use("seaborn-v0_8-whitegrid")
+plt.style.use("default")
+
+# Create the figure with improved dimensions
+fig, ax = plt.subplots(figsize=(12, 8))
+
+# Create the bar chart with a better color palette and alpha for depth
+bars = ethnicity_death_percentage.plot(
+    kind="bar",
+    # color=plt.cm.viridis(np.linspace(0.1, 0.9, len(ethnicity_death_percentage))),
+    alpha=0.8,
+    ax=ax,
+)
+
+# Enhance the title and labels with better fonts and styling
+# ax.set_title("Mortality Rate by Ethnicity", fontsize=16, fontweight="bold", pad=20)
+ax.set_xlabel("Ethnicity", fontsize=14, labelpad=10)
+ax.set_ylabel("Mortality Rate (%)", fontsize=14, labelpad=10)
+
+# Add data labels on top of each bar
+for bar in bars.patches:
+    height = bar.get_height()
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        height + 0.5,
+        f"{height:.1f}%",
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        fontweight="bold",
+    )
+
+# Add a subtle grid on the y-axis only for better readability
+ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+# Remove top and right spines for cleaner look
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+
+# Rotate the x-axis labels slightly and align them
+plt.xticks(rotation=30, ha="right", fontsize=12)
+plt.yticks(fontsize=12)
+
+# Adjust layout to make sure everything fits nicely
+plt.tight_layout()
+
+# Save with higher quality
+fig.savefig(
+    "ethnicity_percentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight"
+)
+
+# Also save as PNG for quick viewing
+fig.savefig(
+    "ethnicity_percentage_deaths.png", dpi=300, format="png", bbox_inches="tight"
+)
+
+# Display the plot
+plt.show()
 
 # %%
 df["age"].describe()
@@ -272,7 +407,7 @@ age_death_percentage = (age_death_counts / age_total_counts) * 100
 
 # Plot the line chart
 plt.figure(figsize=(12, 6))
-age_death_percentage.plot(kind='line', marker='o', color='green')
+age_death_percentage.plot(kind="line", marker="o", color="green")
 plt.title("Percentage of Deaths per Age")
 plt.xlabel("Age")
 plt.ylabel("Percentage of Deaths")
@@ -285,3 +420,69 @@ list(df.columns)
 
 # %%
 df["hospital_admit_source"].value_counts()
+
+
+# %%
+gender_death_counts = df[df["hospital_death"] == 1]["gender"].value_counts()
+gender_total_counts = df["gender"].value_counts()
+
+# Calculate the percentage of deaths per gender
+gender_death_percentage = (gender_death_counts / gender_total_counts) * 100
+
+# Sort the data in descending order for better visualization
+gender_death_percentgender = gender_death_percentage.sort_values(ascending=False)
+
+# Set a clean, modern style
+# plt.style.use("seaborn-v0_8-whitegrid")
+plt.style.use("default")
+
+# Create the figure with improved dimensions
+fig, ax = plt.subplots(figsize=(8, 8))
+
+# Create the bar chart with a better color palette and alpha for depth
+bars = gender_death_percentgender.plot(
+    kind="bar",
+    # color=plt.cm.viridis(np.linspace(0.1, 0.9, len(gender_death_percentgender))),
+    alpha=0.8,
+    ax=ax,
+)
+
+# Enhance the title and labels with better fonts and styling
+# ax.set_title("Mortality Rate by gender", fontsize=16, fontweight="bold", pad=20)
+ax.set_xlabel("gender", fontsize=14, labelpad=10)
+ax.set_ylabel("Mortality Rate (%)", fontsize=14, labelpad=10)
+
+# Add data labels on top of each bar
+for bar in bars.patches:
+    height = bar.get_height()
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        height + 0.5,
+        f"{height:.1f}%",
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        fontweight="bold",
+    )
+
+# Add a subtle grid on the y-axis only for better readability
+ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+# Remove top and right spines for cleaner look
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+
+# Rotate the x-axis labels slightly and align them
+plt.xticks(rotation=0, fontsize=12)
+plt.yticks(fontsize=12)
+
+# Adjust layout to make sure everything fits nicely
+plt.tight_layout()
+
+# Save with higher quality
+fig.savefig("gender_percentage_deaths.pdf", dpi=600, format="pdf", bbox_inches="tight")
+
+# Also save as PNG for quick viewing
+fig.savefig("gender_percentage_deaths.png", dpi=300, format="png", bbox_inches="tight")
+
+# %%
